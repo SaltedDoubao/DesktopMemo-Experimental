@@ -39,6 +39,7 @@ public partial class MainWindow : Window
             DataContext = _viewModel;
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.ThemeChanged += OnThemeChanged;
+            _viewModel.TodoListViewModel.InputVisibilityChanged += OnTodoInputVisibilityChanged;
 
             ConfigureWindow();
             ConfigureTrayService();
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
             Loaded += OnLoaded;
             Closing += OnClosing;
             LocationChanged += OnLocationChanged; // 监听位置变化
+            PreviewMouseDown += OnWindowPreviewMouseDown;
         }
         catch (Exception ex)
         {
@@ -294,6 +296,8 @@ public partial class MainWindow : Window
     {
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.ThemeChanged -= OnThemeChanged;
+        _viewModel.TodoListViewModel.InputVisibilityChanged -= OnTodoInputVisibilityChanged;
+        PreviewMouseDown -= OnWindowPreviewMouseDown;
     }
 
     private void OnLocationChanged(object? sender, EventArgs e)
@@ -819,5 +823,45 @@ public partial class MainWindow : Window
                 _viewModel.TodoListViewModel.CancelEditTodoCommand.Execute(null);
             }
         }), DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// 当新建待办 TextBox 加载时，自动聚焦
+    /// </summary>
+    private void NewTodoTextBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBox textBox)
+        {
+            textBox.Focus();
+        }
+    }
+
+    /// <summary>
+    /// 当TodoInput可见性改变时，自动聚焦输入框
+    /// </summary>
+    private void OnTodoInputVisibilityChanged(object? sender, bool isVisible)
+    {
+        if (isVisible)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                NewTodoTextBox?.Focus();
+            }, DispatcherPriority.Input);
+        }
+    }
+
+    /// <summary>
+    /// 窗口预览鼠标按下事件，用于检测外部点击
+    /// </summary>
+    private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_viewModel.TodoListViewModel.IsInputVisible)
+            return;
+
+        // 检查点击位置是否在输入区域外
+        if (TodoInputBorder != null && !TodoInputBorder.IsMouseOver)
+        {
+            _viewModel.TodoListViewModel.OnInputLostFocus();
+        }
     }
 }

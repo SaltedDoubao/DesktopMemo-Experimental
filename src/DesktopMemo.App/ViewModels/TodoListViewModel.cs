@@ -31,7 +31,7 @@ public partial class TodoListViewModel : ObservableObject
     private string _statusText = "就绪";
 
     [ObservableProperty]
-    private bool _isInputVisible = true;
+    private bool _isInputVisible = false;
 
     // 编辑状态
     [ObservableProperty]
@@ -110,6 +110,9 @@ public partial class TodoListViewModel : ObservableObject
 
         OnPropertyChanged(nameof(IncompleteTodoCount));
         SetStatus("已添加待办事项");
+
+        // 添加成功后收起输入框
+        IsInputVisible = false;
     }
 
     /// <summary>
@@ -239,6 +242,17 @@ public partial class TodoListViewModel : ObservableObject
     {
         IsInputVisible = !IsInputVisible;
         SetStatus(IsInputVisible ? "显示输入区域" : "隐藏输入区域");
+    }
+
+    /// <summary>
+    /// 处理输入框失去焦点事件。
+    /// </summary>
+    [RelayCommand]
+    public void OnInputLostFocus()
+    {
+        // 失焦时直接收起输入框并清空内容
+        IsInputVisible = false;
+        NewTodoContent = string.Empty;
     }
 
     /// <summary>

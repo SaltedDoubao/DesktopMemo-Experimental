@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:conv="clr-namespace:DesktopMemo.App.Converters"
         xmlns:loc="clr-namespace:DesktopMemo.App.Localization"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
         Title="{loc:Localize MainWindow_Title_Memo}"
         Width="380"
@@ -594,23 +595,23 @@
                                             <Setter Property="Command" Value="{Binding CreateMemoCommand}" />
                                             <Setter Property="ToolTip" Value="{Binding LocalizationService[Button_New]}" />
                                             <Style.Triggers>
-                                                <!-- Todo模式 + 输入区域可见: 显示"隐藏"提示 -->
+                                                <!-- Todo模式 + 输入区域可见: 显示"取消"提示 -->
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding IsInTodoListMode}" Value="True" />
                                                         <Condition Binding="{Binding TodoListViewModel.IsInputVisible}" Value="True" />
                                                     </MultiDataTrigger.Conditions>
                                                     <Setter Property="Command" Value="{Binding TodoListViewModel.ToggleInputCommand}" />
-                                                    <Setter Property="ToolTip" Value="{Binding LocalizationService[Tooltip_HideTodoInput]}" />
+                                                    <Setter Property="ToolTip" Value="{Binding LocalizationService[Tooltip_CancelNewTodo]}" />
                                                 </MultiDataTrigger>
-                                                <!-- Todo模式 + 输入区域隐藏: 显示"显示"提示 -->
+                                                <!-- Todo模式 + 输入区域隐藏: 显示"新建待办事项"提示 -->
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding IsInTodoListMode}" Value="True" />
                                                         <Condition Binding="{Binding TodoListViewModel.IsInputVisible}" Value="False" />
                                                     </MultiDataTrigger.Conditions>
                                                     <Setter Property="Command" Value="{Binding TodoListViewModel.ToggleInputCommand}" />
-                                                    <Setter Property="ToolTip" Value="{Binding LocalizationService[Tooltip_ShowTodoInput]}" />
+                                                    <Setter Property="ToolTip" Value="{Binding LocalizationService[Tooltip_NewTodo]}" />
                                                 </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -629,13 +630,13 @@
                                                         </MultiDataTrigger.Conditions>
                                                         <Setter Property="Data" Value="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
                                                     </MultiDataTrigger>
-                                                    <!-- Todo模式 + 输入区域隐藏: 显示向下箭头 (展开) -->
+                                                    <!-- Todo模式 + 输入区域隐藏: 显示加号 (新建) -->
                                                     <MultiDataTrigger>
                                                         <MultiDataTrigger.Conditions>
                                                             <Condition Binding="{Binding IsInTodoListMode}" Value="True" />
                                                             <Condition Binding="{Binding TodoListViewModel.IsInputVisible}" Value="False" />
                                                         </MultiDataTrigger.Conditions>
-                                                        <Setter Property="Data" Value="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                                                        <Setter Property="Data" Value="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
                                                     </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -782,21 +783,22 @@
                             </Grid.RowDefinitions>
 
                             <!-- 添加新待办事项的输入框 -->
-                            <Border Grid.Row="0" Background="#15FFFFFF" CornerRadius="12" Padding="12" Margin="8,8,8,8" Visibility="{Binding TodoListViewModel.IsInputVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Border x:Name="TodoInputBorder" Grid.Row="0" Background="#15FFFFFF" CornerRadius="12" Padding="12" Margin="8,8,8,8" Visibility="{Binding TodoListViewModel.IsInputVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" 
-                                             Text="{Binding TodoListViewModel.NewTodoContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                             Background="Transparent" 
-                                             BorderThickness="0" 
-                                             Foreground="#F0FFFFFF" 
+                                    <TextBox x:Name="NewTodoTextBox" Grid.Column="0"
+                                             Text="{Binding TodoListViewModel.NewTodoContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Foreground="#F0FFFFFF"
                                              FontSize="13"
                                              CaretBrush="#FF64B5F6"
                                              VerticalAlignment="Center"
-                                             Margin="0,0,8,0">
+                                             Margin="0,0,8,0"
+                                             Loaded="NewTodoTextBox_Loaded">
                                         <TextBox.InputBindings>
                                             <KeyBinding Key="Enter" Command="{Binding TodoListViewModel.AddTodoCommand}" />
                                         </TextBox.InputBindings>
