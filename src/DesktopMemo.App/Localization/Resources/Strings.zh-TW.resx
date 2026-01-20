@@ -284,7 +284,15 @@
   <data name="Tooltip_ShowTodoInput" xml:space="preserve">
     <value>顯示輸入區域</value>
   </data>
-  
+  <data name="Tooltip_NewTodo" xml:space="preserve">
+    <value>新建待辦事項</value>
+    <comment>新建待辦事項按鈕提示</comment>
+  </data>
+  <data name="Tooltip_CancelNewTodo" xml:space="preserve">
+    <value>取消</value>
+    <comment>取消新建待辦事項按鈕提示</comment>
+  </data>
+
   <!-- 語言名稱 -->
   <data name="Language_zhCN" xml:space="preserve">
     <value>簡體中文</value>

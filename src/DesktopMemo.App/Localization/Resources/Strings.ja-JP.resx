@@ -284,7 +284,15 @@
   <data name="Tooltip_ShowTodoInput" xml:space="preserve">
     <value>入力エリアを表示</value>
   </data>
-  
+  <data name="Tooltip_NewTodo" xml:space="preserve">
+    <value>新しいタスク</value>
+    <comment>新しいタスクボタンのツールチップ</comment>
+  </data>
+  <data name="Tooltip_CancelNewTodo" xml:space="preserve">
+    <value>キャンセル</value>
+    <comment>新しいタスクのキャンセルボタンのツールチップ</comment>
+  </data>
+
   <!-- 言語名 -->
   <data name="Language_zhCN" xml:space="preserve">
     <value>簡体字中国語</value>

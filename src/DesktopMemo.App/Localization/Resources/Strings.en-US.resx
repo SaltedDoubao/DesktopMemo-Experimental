@@ -284,7 +284,15 @@
   <data name="Tooltip_ShowTodoInput" xml:space="preserve">
     <value>Show Input Area</value>
   </data>
-  
+  <data name="Tooltip_NewTodo" xml:space="preserve">
+    <value>New Todo</value>
+    <comment>New todo button tooltip</comment>
+  </data>
+  <data name="Tooltip_CancelNewTodo" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Cancel new todo button tooltip</comment>
+  </data>
+
   <!-- Language Names -->
   <data name="Language_zhCN" xml:space="preserve">
     <value>Simplified Chinese</value>

@@ -352,7 +352,15 @@
     <value>显示待办输入区</value>
     <comment>显示待办事项输入区</comment>
   </data>
-  
+  <data name="Tooltip_NewTodo" xml:space="preserve">
+    <value>新建待办事项</value>
+    <comment>新建待办事项按钮提示</comment>
+  </data>
+  <data name="Tooltip_CancelNewTodo" xml:space="preserve">
+    <value>取消</value>
+    <comment>取消新建待办事项按钮提示</comment>
+  </data>
+
   <!-- 语言名称 -->
   <data name="Language_zhCN" xml:space="preserve">
     <value>简体中文</value>

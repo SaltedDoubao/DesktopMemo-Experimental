@@ -284,7 +284,15 @@
   <data name="Tooltip_ShowTodoInput" xml:space="preserve">
     <value>입력 영역 표시</value>
   </data>
-  
+  <data name="Tooltip_NewTodo" xml:space="preserve">
+    <value>새 할 일</value>
+    <comment>새 할 일 버튼 툴팁</comment>
+  </data>
+  <data name="Tooltip_CancelNewTodo" xml:space="preserve">
+    <value>취소</value>
+    <comment>새 할 일 취소 버튼 툴팁</comment>
+  </data>
+
   <!-- 언어 이름 -->
   <data name="Language_zhCN" xml:space="preserve">
     <value>중국어 간체</value>
