@@ -54,6 +54,10 @@ public class LocalizationService : ILocalizationService, INotifyPropertyChanged
                 return $"[{key}]";
             }
         }
+        set
+        {
+            // Ignore accidental TwoWay bindings targeting localization resources.
+        }
     }
 
     /// <summary>

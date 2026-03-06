@@ -122,6 +122,12 @@
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="Settings_Quick_Title" xml:space="preserve">
+    <value>Quick Settings</value>
+  </data>
+  <data name="Settings_OpenFullSettings" xml:space="preserve">
+    <value>Open Full Settings</value>
+  </data>
   <data name="Settings_Topmost_Title" xml:space="preserve">
     <value>Window Topmost Mode</value>
   </data>
@@ -192,6 +198,39 @@
   <data name="Settings_AutoStart" xml:space="preserve">
     <value>Auto Start on Boot</value>
   </data>
+  <data name="Settings_Startup_Title" xml:space="preserve">
+    <value>Startup Behavior</value>
+  </data>
+  <data name="Settings_TrayEnabled" xml:space="preserve">
+    <value>Enable Tray</value>
+  </data>
+  <data name="Settings_TodoInputVisible" xml:space="preserve">
+    <value>Show Todo Input</value>
+  </data>
+  <data name="Settings_Startup_Page" xml:space="preserve">
+    <value>Startup Page</value>
+  </data>
+  <data name="Settings_Startup_Memo" xml:space="preserve">
+    <value>Memo</value>
+  </data>
+  <data name="Settings_Startup_Todo" xml:space="preserve">
+    <value>Todo</value>
+  </data>
+  <data name="Settings_WindowPinned" xml:space="preserve">
+    <value>Pin Window</value>
+  </data>
+  <data name="Settings_Exit_Title" xml:space="preserve">
+    <value>Exit Behavior</value>
+  </data>
+  <data name="Settings_Exit_Confirm" xml:space="preserve">
+    <value>Confirm on Exit</value>
+  </data>
+  <data name="Settings_Exit_DefaultToTray" xml:space="preserve">
+    <value>Default to Minimize to Tray</value>
+  </data>
+  <data name="Settings_Delete_Confirm" xml:space="preserve">
+    <value>Confirm Before Delete</value>
+  </data>
   
   <data name="Settings_Status_Title" xml:space="preserve">
     <value>Status</value>
@@ -214,6 +253,30 @@
   </data>
   <data name="Settings_SaveSettings" xml:space="preserve">
     <value>Save Settings</value>
+  </data>
+  <data name="Settings_Log_Title" xml:space="preserve">
+    <value>Application Logs</value>
+  </data>
+  <data name="Settings_Log_Filter_Label" xml:space="preserve">
+    <value>Level:</value>
+  </data>
+  <data name="Settings_Log_Level_Debug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="Settings_Log_Level_Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="Settings_Log_Level_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Settings_Log_Level_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Settings_Log_Display" xml:space="preserve">
+    <value>Shown: </value>
+  </data>
+  <data name="Settings_Log_Clear" xml:space="preserve">
+    <value>Clear</value>
   </data>
   
   <!-- Dialogs -->
@@ -274,6 +337,9 @@
   </data>
   <data name="Tooltip_Return" xml:space="preserve">
     <value>Return</value>
+  </data>
+  <data name="Tooltip_ViewLog" xml:space="preserve">
+    <value>View detailed logs</value>
   </data>
   <data name="Tooltip_ToggleTodoInput" xml:space="preserve">
     <value>Toggle Todo Input Area</value>
