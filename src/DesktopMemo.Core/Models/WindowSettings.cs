@@ -22,9 +22,14 @@ public sealed record WindowSettings(
     string CurrentPage = "memo",
     bool TodoInputVisible = false,
     AppTheme Theme = AppTheme.Light,
-    bool IsWindowPinned = false)
+    bool IsWindowPinned = false,
+    bool IsTrayEnabled = true,
+    double SettingsWindowWidth = double.NaN,
+    double SettingsWindowHeight = double.NaN,
+    double SettingsWindowLeft = double.NaN,
+    double SettingsWindowTop = double.NaN)
 {
-    public static WindowSettings Default => new(900, 600, double.NaN, double.NaN, WindowConstants.DEFAULT_TRANSPARENCY, false, true, false, true, true, true, "zh-CN", "memo", false, AppTheme.System, false);
+    public static WindowSettings Default => new(380, 300, double.NaN, double.NaN, WindowConstants.DEFAULT_TRANSPARENCY, false, true, false, true, true, true, "zh-CN", "memo", false, AppTheme.System, false, true, double.NaN, double.NaN, double.NaN, double.NaN);
 
     public WindowSettings WithLocation(double left, double top)
         => this with { Left = left, Top = top };
