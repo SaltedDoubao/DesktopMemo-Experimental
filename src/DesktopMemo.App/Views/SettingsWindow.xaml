@@ -1,0 +1,785 @@
+<Window x:Class="DesktopMemo.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:loc="clr-namespace:DesktopMemo.App.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Localize Settings_Title}"
+        Width="420"
+        Height="720"
+        MinWidth="380"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        ShowInTaskbar="True"
+        Background="{DynamicResource PrimaryBackgroundColor}"
+        FontFamily="Segoe UI, Microsoft YaHei"
+        FontSize="14"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+    <Grid>
+        <Border Visibility="{Binding IsLogPanelVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Style="{StaticResource GlassScrollViewer}">
+                <StackPanel Margin="20,16,20,20">
+                    <TextBlock Text="{Binding LocalizationService[Settings_Title], Mode=OneWay}"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryTextColor}"
+                               Margin="0,0,0,20" />
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Topmost_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+                            <RadioButton Content="{Binding LocalizationService[Settings_Topmost_Normal], Mode=OneWay}" GroupName="TopmostMode" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTopmostMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Normal}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,8" />
+                            <RadioButton Content="{Binding LocalizationService[Settings_Topmost_Desktop], Mode=OneWay}" GroupName="TopmostMode" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTopmostMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Desktop}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,8" />
+                            <RadioButton Content="{Binding LocalizationService[Settings_Topmost_Always], Mode=OneWay}" GroupName="TopmostMode" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTopmostMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Always}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Position_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+
+                            <StackPanel Margin="0,0,0,12">
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding LocalizationService[Settings_Position_X], Mode=OneWay}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" Text="{Binding CustomPositionX}" Background="{DynamicResource InputBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderBrush="{DynamicResource PrimaryBorderColor}" BorderThickness="1" Padding="8,6" FontSize="13" Height="32" VerticalContentAlignment="Center">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TextBox">
+                                                            <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="border" Property="BorderBrush" Value="#007AFF"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsFocused" Value="True">
+                                                                    <Setter TargetName="border" Property="BorderBrush" Value="#007AFF"/>
+                                                                    <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                    <TextBlock Grid.Column="3" Text="{Binding LocalizationService[Settings_Position_Y], Mode=OneWay}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="4" Text="{Binding CustomPositionY}" Background="{DynamicResource InputBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderBrush="{DynamicResource PrimaryBorderColor}" BorderThickness="1" Padding="8,6" FontSize="13" Height="32" VerticalContentAlignment="Center">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TextBox">
+                                                            <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="border" Property="BorderBrush" Value="#007AFF"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsFocused" Value="True">
+                                                                    <Setter TargetName="border" Property="BorderBrush" Value="#007AFF"/>
+                                                                    <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                </Grid>
+                                <Button Command="{Binding ApplyCustomPositionCommand}" Height="32" FontSize="13" HorizontalAlignment="Stretch" Background="#007AFF" Foreground="White" BorderThickness="0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Button_Apply], Mode=OneWay}"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#0051D5"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#004BB8"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Command="{Binding RememberPositionCommand}" Grid.Column="0" Height="32" FontSize="13" Background="{DynamicResource ButtonBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderThickness="0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Settings_Position_Remember], Mode=OneWay}"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#D1D1D6"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#C7C7CC"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Command="{Binding RestorePositionCommand}" Grid.Column="2" Height="32" FontSize="13" Background="{DynamicResource ButtonBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderThickness="0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Settings_Position_Restore], Mode=OneWay}"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#D1D1D6"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#C7C7CC"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Appearance_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+
+                            <TextBlock Text="{Binding LocalizationService[Settings_Theme_Label], Mode=OneWay}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,8" />
+                            <StackPanel Margin="0,0,0,16">
+                                <RadioButton Content="{Binding LocalizationService[Settings_Theme_Light], Mode=OneWay}" GroupName="Theme" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Light}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,8" />
+                                <RadioButton Content="{Binding LocalizationService[Settings_Theme_Dark], Mode=OneWay}" GroupName="Theme" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Dark}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,8" />
+                                <RadioButton Content="{Binding LocalizationService[Settings_Theme_System], Mode=OneWay}" GroupName="Theme" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=System}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" />
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding LocalizationService[Settings_Opacity_Label], Mode=OneWay}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding BackgroundOpacityPercent, StringFormat={}{0:F0}%}" Foreground="#007AFF" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </Grid>
+                            <Slider x:Name="SettingsOpacitySlider" Minimum="0" Maximum="100" Value="{Binding BackgroundOpacityPercent, Mode=TwoWay}" ValueChanged="SettingsOpacitySlider_ValueChanged" Height="24" Style="{StaticResource AppleSliderStyle}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Language_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+                            <TextBlock Text="{Binding LocalizationService[Settings_Language_Label], Mode=OneWay}" Foreground="{DynamicResource SecondaryTextColor}" FontSize="12" Margin="0,0,0,8" />
+                            <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                      SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
+                                      DisplayMemberPath="NativeName"
+                                      Background="{DynamicResource InputBackgroundColor}"
+                                      Foreground="{DynamicResource PrimaryTextColor}"
+                                      BorderBrush="{DynamicResource PrimaryBorderColor}"
+                                      BorderThickness="1"
+                                      Padding="10,7"
+                                      FontSize="13"
+                                      Height="34">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextColor}"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Padding" Value="12,8"/>
+                                        <Setter Property="FontSize" Value="13"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ComboBoxItem">
+                                                    <Border x:Name="Bd"
+                                                            Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            CornerRadius="6">
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsHighlighted" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ItemHighlightColor}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentColor}"/>
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                                <ComboBox.Template>
+                                    <ControlTemplate TargetType="ComboBox">
+                                        <Grid>
+                                            <ToggleButton x:Name="ToggleButton"
+                                                          Grid.Column="2"
+                                                          Focusable="false"
+                                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                          ClickMode="Press">
+                                                <ToggleButton.Template>
+                                                    <ControlTemplate TargetType="ToggleButton">
+                                                        <Border x:Name="border"
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="8">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <ContentPresenter Grid.Column="0"
+                                                                                  Margin="12,0,0,0"
+                                                                                  HorizontalAlignment="Left"
+                                                                                  VerticalAlignment="Center"
+                                                                                  Content="{TemplateBinding Content}"/>
+                                                                <Path Grid.Column="1"
+                                                                      Data="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                                                                      Fill="{DynamicResource IconColor}"
+                                                                      Width="12"
+                                                                      Height="12"
+                                                                      Stretch="Uniform"
+                                                                      Margin="0,0,12,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="border" Property="BorderBrush" Value="#007AFF"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </ToggleButton.Template>
+                                                <ToggleButton.Style>
+                                                    <Style TargetType="ToggleButton">
+                                                        <Setter Property="Background" Value="{DynamicResource InputBackgroundColor}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBorderColor}"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                    </Style>
+                                                </ToggleButton.Style>
+                                            </ToggleButton>
+                                            <ContentPresenter x:Name="ContentSite"
+                                                              IsHitTestVisible="False"
+                                                              Content="{TemplateBinding SelectionBoxItem}"
+                                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                              Margin="12,0,30,0"
+                                                              VerticalAlignment="Center"
+                                                              HorizontalAlignment="Left"/>
+                                            <Popup x:Name="Popup"
+                                                   Placement="Bottom"
+                                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                   AllowsTransparency="True"
+                                                   Focusable="False"
+                                                   PopupAnimation="Fade">
+                                                <Border x:Name="DropDownBorder"
+                                                        Background="{DynamicResource CardBackgroundColor}"
+                                                        BorderBrush="{DynamicResource PrimaryBorderColor}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="10"
+                                                        MinWidth="{TemplateBinding ActualWidth}"
+                                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                                        Padding="4">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="0" Opacity="0.15"/>
+                                                    </Border.Effect>
+                                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                    </ScrollViewer>
+                                                </Border>
+                                            </Popup>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </ComboBox.Template>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Startup_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+
+                            <CheckBox Content="{Binding LocalizationService[Settings_AutoStart], Mode=OneWay}" IsChecked="{Binding IsAutoStartEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_TrayEnabled], Mode=OneWay}" IsChecked="{Binding IsTrayEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_TodoInputVisible], Mode=OneWay}" IsChecked="{Binding TodoListViewModel.IsInputVisible, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+
+                            <TextBlock Text="{Binding LocalizationService[Settings_Startup_Page], Mode=OneWay}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,6,0,8" />
+                            <StackPanel>
+                                <RadioButton Content="{Binding LocalizationService[Settings_Startup_Memo], Mode=OneWay}" GroupName="StartupPage" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding IsInTodoListMode, Converter={StaticResource InverseBooleanConverter}, Mode=TwoWay}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,8" />
+                                <RadioButton Content="{Binding LocalizationService[Settings_Startup_Todo], Mode=OneWay}" GroupName="StartupPage" Style="{StaticResource ModernRadioButton}" IsChecked="{Binding IsInTodoListMode, Mode=TwoWay}" FontSize="13" Foreground="{DynamicResource PrimaryTextColor}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Other_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_ClickThrough], Mode=OneWay}" IsChecked="{Binding IsClickThroughEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_WindowPinned], Mode=OneWay}" IsChecked="{Binding IsWindowPinned, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_Exit_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_Exit_Confirm], Mode=OneWay}" IsChecked="{Binding ShowExitConfirmation, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_Exit_DefaultToTray], Mode=OneWay}" IsChecked="{Binding DefaultExitToTray, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" Margin="0,0,0,10" />
+                            <CheckBox Content="{Binding LocalizationService[Settings_Delete_Confirm], Mode=OneWay}" IsChecked="{Binding ShowDeleteConfirmation, Mode=TwoWay}" Style="{StaticResource SettingsCheckBox}" Foreground="{DynamicResource PrimaryTextColor}" FontSize="13" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding LocalizationService[Settings_Status_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Command="{Binding ToggleLogCommand}" Background="{DynamicResource ButtonBackgroundColor}" BorderThickness="0" Padding="8,4" ToolTip="{Binding LocalizationService[Tooltip_ViewLog], Mode=OneWay}" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock Text=">" FontSize="14" Foreground="{DynamicResource PrimaryTextColor}" />
+                                </Button>
+                            </Grid>
+
+                            <TextBlock Grid.Row="1" Text="{Binding AppInfo}" Foreground="{DynamicResource SecondaryTextColor}" FontSize="11" TextWrapping="Wrap" LineHeight="16" />
+                        </Grid>
+                    </Border>
+                    <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="12" Padding="16,14" Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="0" Opacity="0.08"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="{Binding LocalizationService[Settings_ImportExport_Title], Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextColor}" Margin="0,0,0,12" />
+                            <Button Command="{Binding ImportLegacyCommand}" Margin="0,0,0,8" Height="34" FontSize="13" Background="{DynamicResource ButtonBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderThickness="0" Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Settings_ImportLegacy], Mode=OneWay}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#D1D1D6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#C7C7CC"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Command="{Binding ExportMarkdownCommand}" Height="34" FontSize="13" Background="{DynamicResource ButtonBackgroundColor}" Foreground="{DynamicResource PrimaryTextColor}" BorderThickness="0" Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Settings_ExportMarkdown], Mode=OneWay}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#D1D1D6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#C7C7CC"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <Button Command="{Binding PersistWindowSettingsCommand}" Height="40" HorizontalAlignment="Stretch" FontSize="14" FontWeight="SemiBold" Background="#007AFF" Foreground="White" BorderThickness="0" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{Binding LocalizationService[Settings_SaveSettings], Mode=OneWay}"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#0051D5"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#004BB8"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Border Visibility="{Binding IsLogPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="20,12,20,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding LocalizationService[Settings_Log_Title], Mode=OneWay}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextColor}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Width="32" Height="32" Command="{Binding ToggleLogCommand}" Background="{DynamicResource ButtonBackgroundColor}" BorderThickness="0" ToolTip="{Binding LocalizationService[Tooltip_Return], Mode=OneWay}" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                                <TextBlock Text="&lt;" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryTextColor}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+                <Border Grid.Row="1" Background="{DynamicResource CardBackgroundColor}" CornerRadius="10" Padding="10" Margin="20,0,20,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                            <TextBlock Text="{Binding LocalizationService[Settings_Log_Filter_Label], Mode=OneWay}" FontSize="11" Foreground="{DynamicResource SecondaryTextColor}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <ToggleButton Content="{Binding LocalizationService[Settings_Log_Level_Debug], Mode=OneWay}" IsChecked="{Binding LogViewModel.SelectedLogLevel, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Debug, Mode=TwoWay}" FontSize="10" Padding="6,3" Margin="0,0,4,0" Cursor="Hand">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextColor}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter Property="Background" Value="#808080"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            <ToggleButton Content="{Binding LocalizationService[Settings_Log_Level_Info], Mode=OneWay}" IsChecked="{Binding LogViewModel.SelectedLogLevel, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Info, Mode=TwoWay}" FontSize="10" Padding="6,3" Margin="0,0,4,0" Cursor="Hand">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextColor}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter Property="Background" Value="#2196F3"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            <ToggleButton Content="{Binding LocalizationService[Settings_Log_Level_Warning], Mode=OneWay}" IsChecked="{Binding LogViewModel.SelectedLogLevel, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Warning, Mode=TwoWay}" FontSize="10" Padding="6,3" Margin="0,0,4,0" Cursor="Hand">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextColor}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter Property="Background" Value="#FF9800"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            <ToggleButton Content="{Binding LocalizationService[Settings_Log_Level_Error], Mode=OneWay}" IsChecked="{Binding LogViewModel.SelectedLogLevel, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Error, Mode=TwoWay}" FontSize="10" Padding="6,3" Cursor="Hand">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextColor}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter Property="Background" Value="#F44336"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundColor}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" FontSize="10" Foreground="{DynamicResource SecondaryTextColor}" VerticalAlignment="Center">
+                                <Run Text="{Binding LocalizationService[Settings_Log_Display], Mode=OneWay}"/>
+                                <Run Text="{Binding LogViewModel.DisplayedLogCount}" FontWeight="Bold"/>
+                                <Run Text=" / "/>
+                                <Run Text="{Binding LogViewModel.TotalLogCount}"/>
+                            </TextBlock>
+                            <Button Grid.Column="1" Content="{Binding LocalizationService[Settings_Log_Clear], Mode=OneWay}" Command="{Binding LogViewModel.ClearLogsCommand}" FontSize="10" Padding="6,3" Background="#F44336" Foreground="White" BorderThickness="0" Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#E53935"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Border>
+                <ListBox Grid.Row="2"
+                         ItemsSource="{Binding LogViewModel.Logs}"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.CacheLength="10,10"
+                         VirtualizingPanel.CacheLengthUnit="Item"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         Margin="20,0,20,16"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         SelectionMode="Single">
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="ListBox">
+                            <ScrollViewer Style="{StaticResource GlassScrollViewer}">
+                                <ItemsPresenter />
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ListBox.Template>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource CardBackgroundColor}" CornerRadius="8" Padding="8,6" Margin="0,0,0,6">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0" Margin="0,0,0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" CornerRadius="3" Padding="5,2" Margin="0,0,6,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#808080"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Debug">
+                                                            <Setter Property="Background" Value="#808080"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Info">
+                                                            <Setter Property="Background" Value="#2196F3"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                            <Setter Property="Background" Value="#FF9800"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                            <Setter Property="Background" Value="#F44336"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding LevelName}" FontSize="9" Foreground="White" FontWeight="Bold" />
+                                        </Border>
+
+                                        <TextBlock Grid.Column="1" Text="{Binding Source}" FontSize="10" Foreground="{DynamicResource SecondaryTextColor}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+
+                                        <TextBlock Grid.Column="2" Text="{Binding Timestamp, StringFormat='HH:mm:ss'}" FontSize="9" Foreground="{DynamicResource SecondaryTextColor}" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="1" Text="{Binding Message}" FontSize="10" Foreground="{DynamicResource PrimaryTextColor}" TextWrapping="Wrap" LineHeight="15" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
+

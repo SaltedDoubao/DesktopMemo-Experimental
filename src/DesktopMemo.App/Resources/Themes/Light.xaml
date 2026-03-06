@@ -20,6 +20,7 @@
     <!-- 按钮颜色 -->
     <SolidColorBrush x:Key="ButtonBackgroundColor" Color="#E8E8ED"/>
     <SolidColorBrush x:Key="ButtonBackgroundHoverColor" Color="#D1D1D6"/>
+    <SolidColorBrush x:Key="ButtonHoverBackgroundColor" Color="#D1D1D6"/>
     <SolidColorBrush x:Key="ButtonBackgroundPressedColor" Color="#C7C7CC"/>
     <SolidColorBrush x:Key="ButtonForegroundColor" Color="#1D1D1F"/>
     
