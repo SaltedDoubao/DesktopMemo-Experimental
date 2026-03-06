@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DesktopMemo.Core.Contracts;
 using DesktopMemo.Core.Models;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace DesktopMemo.Infrastructure.Services;
 
@@ -22,6 +24,10 @@ public sealed class FileLogService : ILogService, IDisposable
     private readonly List<LogEntry> _memoryLogs;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly string _currentLogFile;
+    private readonly string _sessionId;
+    private readonly string _appVersion;
+    private readonly string _runtimeInfo;
+    private readonly string _osInfo;
     private bool _disposed;
 
     public event EventHandler<LogEntry>? LogAdded;
@@ -37,11 +43,16 @@ public sealed class FileLogService : ILogService, IDisposable
         // 创建当日日志文件
         var today = DateTime.Now.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         _currentLogFile = Path.Combine(_logDirectory, $"app_{today}.log");
+        _sessionId = Guid.NewGuid().ToString("N");
+        _appVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown";
+        _runtimeInfo = RuntimeInformation.FrameworkDescription;
+        _osInfo = RuntimeInformation.OSDescription;
 
         // 启动时记录所有级别的测试日志，验证日志系统工作正常
         Debug("FileLogService", "日志服务已初始化 - DEBUG 级别");
         Info("FileLogService", "日志服务已初始化 - INFO 级别");
         Warning("FileLogService", "日志服务已初始化 - WARNING 级别（测试）");
+        Info("Session", $"日志会话开始 | sid={_sessionId} | ver={_appVersion} | runtime={_runtimeInfo} | os={_osInfo} | log={_currentLogFile}");
         
         System.Diagnostics.Debug.WriteLine($"[FileLogService] 日志文件路径: {_currentLogFile}");
     }
@@ -74,6 +85,12 @@ public sealed class FileLogService : ILogService, IDisposable
         {
             _lock.Wait();
 
+            entry = entry with
+            {
+                SessionId = _sessionId,
+                AppVersion = _appVersion
+            };
+
             // 添加到内存缓存
             _memoryLogs.Add(entry);
 
@@ -83,9 +100,16 @@ public sealed class FileLogService : ILogService, IDisposable
                 _memoryLogs.RemoveRange(0, _memoryLogs.Count - _maxMemoryLogs);
             }
 
-            // 写入文件（异步，不等待）
+            // 写入文件（Error 级别同步写入，避免崩溃时丢日志）
             // 注意：所有级别的日志（包括Debug）都会被写入文件
-            _ = Task.Run(() => WriteToFileAsync(entry));
+            if (entry.Level >= LogLevel.Error)
+            {
+                WriteToFileAsync(entry).GetAwaiter().GetResult();
+            }
+            else
+            {
+                _ = Task.Run(() => WriteToFileAsync(entry));
+            }
 
             // 触发事件
             LogAdded?.Invoke(this, entry);
