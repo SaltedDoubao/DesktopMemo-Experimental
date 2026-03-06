@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using DesktopMemo.App.Localization;
 using DesktopMemo.App.ViewModels;
@@ -66,6 +67,7 @@ public partial class App : WpfApp
             
             // 初始化日志服务
             var logService = Services.GetRequiredService<ILogService>();
+            RegisterGlobalExceptionHandlers(logService);
             logService.Info("App", "应用程序启动");
             
             System.Diagnostics.Debug.WriteLine("========== 应用启动 - 开始数据迁移检查 ==========");
@@ -152,6 +154,34 @@ public partial class App : WpfApp
                 MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
+    }
+
+    private void RegisterGlobalExceptionHandlers(ILogService logService)
+    {
+        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+        {
+            var ex = e.ExceptionObject as Exception;
+            logService.Error("App", "未处理异常导致进程终止", ex ?? new Exception("未知未处理异常"));
+        };
+
+        DispatcherUnhandledException += (s, e) =>
+        {
+            logService.Error("App", "UI线程未处理异常", e.Exception);
+            e.Handled = true; // 关键：防止应用崩溃
+
+            // 显示友好的错误提示
+            System.Windows.MessageBox.Show(
+                $"应用程序遇到错误，但已恢复：\n{e.Exception.Message}\n\n详细信息已记录到日志文件。",
+                "DesktopMemo 错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        };
+
+        TaskScheduler.UnobservedTaskException += (s, e) =>
+        {
+            logService.Error("App", "未观察到的任务异常", e.Exception);
+            e.SetObserved();
+        };
     }
 
     protected override void OnExit(ExitEventArgs e)

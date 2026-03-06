@@ -7,9 +7,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using DesktopMemo.App.Views;
 using DesktopMemo.App.ViewModels;
 using DesktopMemo.Core.Contracts;
-using DesktopMemo.Core.Helpers;
 using DesktopMemo.Core.Models;
 using WpfApp = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
@@ -24,6 +24,8 @@ public partial class MainWindow : Window
     private readonly ITrayService _trayService;
     private readonly ILogService _logService;
     private bool _isClosing = false;
+    private SettingsWindow? _settingsWindow; // 单例字段
+    private bool _isOpeningSettings = false; // 防止并发打开设置窗口
 
     public MainWindow(MainViewModel viewModel, IWindowService windowService, ITrayService trayService, ILogService logService)
     {
@@ -39,6 +41,7 @@ public partial class MainWindow : Window
             DataContext = _viewModel;
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
             _viewModel.ThemeChanged += OnThemeChanged;
+            _viewModel.OpenSettingsWindowRequested += OnOpenSettingsWindowRequested;
             _viewModel.TodoListViewModel.InputVisibilityChanged += OnTodoInputVisibilityChanged;
 
             ConfigureWindow();
@@ -47,6 +50,7 @@ public partial class MainWindow : Window
             Loaded += OnLoaded;
             Closing += OnClosing;
             LocationChanged += OnLocationChanged; // 监听位置变化
+            SizeChanged += OnSizeChanged;
             PreviewMouseDown += OnWindowPreviewMouseDown;
         }
         catch (Exception ex)
@@ -79,10 +83,7 @@ public partial class MainWindow : Window
         _trayService.SettingsClick += (s, e) =>
         {
             _windowService.RestoreFromTray();
-            if (!_viewModel.IsSettingsPanelVisible)
-            {
-                _viewModel.IsSettingsPanelVisible = true;
-            }
+            OpenSettingsWindow();
         };
         _trayService.MoveToPresetClick += (s, preset) => _viewModel.MoveToPresetCommand.Execute(preset);
         _trayService.RememberPositionClick += (s, e) => _viewModel.RememberPositionCommand.Execute(null);
@@ -109,37 +110,154 @@ public partial class MainWindow : Window
         _trayService.ExitClick += (s, e) => WpfApp.Current.Shutdown();
     }
 
+    private void OnOpenSettingsWindowRequested(object? sender, EventArgs e)
+    {
+        OpenSettingsWindow();
+    }
+
+    private void OpenSettingsWindow()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(OpenSettingsWindow);
+            return;
+        }
+
+        // 防止并发打开
+        if (_isOpeningSettings)
+        {
+            _logService.Debug("Settings", "设置窗口正在打开中，忽略重复请求");
+            return;
+        }
+
+        try
+        {
+            _isOpeningSettings = true;
+            _logService.Info("Settings", "请求打开设置窗口");
+            _viewModel.IsSettingsPanelVisible = false;
+
+            // 检查现有窗口是否可用
+            if (_settingsWindow != null)
+            {
+                try
+                {
+                    // 关键改进：检查 IsVisible 而非 IsLoaded
+                    // IsVisible 在窗口关闭时会立即变为 false
+                    if (_settingsWindow.IsVisible && _settingsWindow.WindowState != WindowState.Minimized)
+                    {
+                        _logService.Debug("Settings", "激活现有设置窗口");
+                        ApplySettingsWindowState(_settingsWindow);
+                        _settingsWindow.Activate();
+                        _settingsWindow.Focus();
+                        return;
+                    }
+                    else if (_settingsWindow.IsVisible && _settingsWindow.WindowState == WindowState.Minimized)
+                    {
+                        _logService.Debug("Settings", "恢复最小化的设置窗口");
+                        _settingsWindow.WindowState = WindowState.Normal;
+                        ApplySettingsWindowState(_settingsWindow);
+                        _settingsWindow.Activate();
+                        _settingsWindow.Focus();
+                        return;
+                    }
+                    else
+                    {
+                        // 窗口不可见，说明正在关闭或已关闭
+                        _logService.Debug("Settings", "现有窗口不可见，将创建新实例");
+                        _settingsWindow = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logService.Warning("Settings", $"访问现有窗口失败: {ex.Message}");
+                    _settingsWindow = null;
+                }
+            }
+
+            // 创建新窗口
+            _logService.Info("Settings", "创建新的设置窗口");
+            var newWindow = new SettingsWindow(_viewModel);
+
+            // 关键改进：在 Closing 事件中立即清空引用
+            newWindow.Closing += (s, e) =>
+            {
+                _logService.Debug("Settings", "设置窗口开始关闭，立即清空引用");
+                if (_settingsWindow == s)
+                {
+                    _settingsWindow = null;
+                }
+            };
+
+            // 保留 Closed 事件用于日志记录
+            newWindow.Closed += (s, e) =>
+            {
+                _logService.Debug("Settings", "设置窗口已完全关闭");
+            };
+
+            _settingsWindow = newWindow;
+            ApplySettingsWindowState(_settingsWindow);
+            _settingsWindow.Show();
+            _settingsWindow.Activate();
+        }
+        catch (Exception ex)
+        {
+            _logService.Error("Settings", "打开设置窗口失败", ex);
+            _settingsWindow = null;
+
+            MessageBox.Show($"打开设置窗口失败: {ex.Message}", "DesktopMemo",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            // 延迟重置标志，防止过快的连续点击
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _isOpeningSettings = false;
+            }), DispatcherPriority.Background);
+        }
+    }
+
+    private void ApplySettingsWindowState(SettingsWindow settingsWindow)
+    {
+        settingsWindow.Topmost = _viewModel.SelectedTopmostMode == TopmostMode.Always;
+    }
+
+    private void OpenSettingsWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        _logService.Info("UI", "点击按钮: 打开完整设置");
+    }
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainViewModel.IsSettingsPanelVisible))
         {
-            Dispatcher.Invoke(() => ApplySettingsPanelVisibility(_viewModel.IsSettingsPanelVisible));
+            Dispatcher.Invoke(() => ApplyQuickSettingsVisibility(_viewModel.IsSettingsPanelVisible));
         }
-        else if (e.PropertyName == nameof(MainViewModel.IsLogPanelVisible))
+        else if (e.PropertyName == nameof(MainViewModel.BackgroundOpacity))
         {
-            Dispatcher.Invoke(() => ApplyLogPanelVisibility(_viewModel.IsLogPanelVisible));
+            Dispatcher.Invoke(() => UpdateBackgroundOpacity(_viewModel.BackgroundOpacity));
         }
     }
 
-    private void ApplySettingsPanelVisibility(bool show)
+    private void ApplyQuickSettingsVisibility(bool show)
     {
         if (show)
         {
-            SettingsPanel.Visibility = Visibility.Visible;
-            AnimateSettingsPanel(true);
+            QuickSettingsPanel.Visibility = Visibility.Visible;
+            AnimateQuickSettingsPanel(true);
         }
         else
         {
-            AnimateSettingsPanel(false);
+            AnimateQuickSettingsPanel(false);
         }
     }
 
-    private void AnimateSettingsPanel(bool show)
+    private void AnimateQuickSettingsPanel(bool show)
     {
-        if (SettingsPanel.RenderTransform is not System.Windows.Media.TranslateTransform transform)
+        if (QuickSettingsPanel.RenderTransform is not System.Windows.Media.TranslateTransform transform)
         {
             transform = new System.Windows.Media.TranslateTransform();
-            SettingsPanel.RenderTransform = transform;
+            QuickSettingsPanel.RenderTransform = transform;
         }
 
         var animation = new DoubleAnimation
@@ -155,47 +273,7 @@ public partial class MainWindow : Window
 
         if (!show)
         {
-            animation.Completed += (s, e) => SettingsPanel.Visibility = Visibility.Collapsed;
-        }
-
-        transform.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, animation);
-    }
-
-    private void ApplyLogPanelVisibility(bool show)
-    {
-        if (show)
-        {
-            LogPanel.Visibility = Visibility.Visible;
-            AnimateLogPanel(true);
-        }
-        else
-        {
-            AnimateLogPanel(false);
-        }
-    }
-
-    private void AnimateLogPanel(bool show)
-    {
-        if (LogPanel.RenderTransform is not System.Windows.Media.TranslateTransform transform)
-        {
-            transform = new System.Windows.Media.TranslateTransform();
-            LogPanel.RenderTransform = transform;
-        }
-
-        var animation = new DoubleAnimation
-        {
-            From = show ? 340 : 0,
-            To = show ? 0 : 340,
-            Duration = TimeSpan.FromMilliseconds(300),
-            EasingFunction = new ExponentialEase
-            {
-                EasingMode = show ? EasingMode.EaseOut : EasingMode.EaseIn
-            }
-        };
-
-        if (!show)
-        {
-            animation.Completed += (s, e) => LogPanel.Visibility = Visibility.Collapsed;
+            animation.Completed += (s, e) => QuickSettingsPanel.Visibility = Visibility.Collapsed;
         }
 
         transform.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, animation);
@@ -207,8 +285,8 @@ public partial class MainWindow : Window
         try
         {
             // 配置已在 App.OnStartup 中加载，这里只需要应用UI状态
-            ApplySettingsPanelVisibility(_viewModel.IsSettingsPanelVisible);
-            ApplyLogPanelVisibility(_viewModel.IsLogPanelVisible);
+            ApplyQuickSettingsVisibility(_viewModel.IsSettingsPanelVisible);
+            ApplyWindowSize(_viewModel.WindowSettings);
             
             // 应用初始主题
             ApplyTheme(_viewModel.SelectedTheme);
@@ -222,7 +300,7 @@ public partial class MainWindow : Window
             // 尝试使用默认设置继续运行
             try
             {
-                ApplySettingsPanelVisibility(false);
+                ApplyQuickSettingsVisibility(false);
                 _viewModel.SetStatus("初始化失败，使用默认设置运行");
             }
             catch
@@ -241,38 +319,61 @@ public partial class MainWindow : Window
     private void ApplyTheme(AppTheme theme)
     {
         var actualTheme = theme;
-        
+
         // 如果选择了跟随系统，检测系统主题
         if (theme == AppTheme.System)
         {
             actualTheme = IsSystemDarkMode() ? AppTheme.Dark : AppTheme.Light;
         }
 
-        // 找到旧的主题字典并移除
-        var oldThemeDict = System.Windows.Application.Current.Resources.MergedDictionaries
-            .FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Themes/"));
-        
-        if (oldThemeDict != null)
+        try
         {
-            System.Windows.Application.Current.Resources.MergedDictionaries.Remove(oldThemeDict);
+            // 构建主题资源 URI
+            var themeFileName = actualTheme == AppTheme.Dark
+                ? "Dark.xaml"
+                : "Light.xaml";
+
+            var themeUri = new Uri(
+                $"Resources/Themes/{themeFileName}",
+                UriKind.Relative);
+
+            // 先创建并加载新的资源字典
+            var newThemeDict = new ResourceDictionary { Source = themeUri };
+
+            // 找到旧的主题字典
+            var oldThemeDict = System.Windows.Application.Current.Resources.MergedDictionaries
+                .FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Themes/"));
+
+            // 原子性替换：先插入新字典，再移除旧字典
+            System.Windows.Application.Current.Resources.MergedDictionaries.Insert(0, newThemeDict);
+
+            if (oldThemeDict != null)
+            {
+                System.Windows.Application.Current.Resources.MergedDictionaries.Remove(oldThemeDict);
+            }
+
+            _logService?.Info("Theme", $"主题切换成功: {actualTheme}");
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Theme", "主题切换失败", ex);
+            // 主题切换失败不影响应用程序继续运行
+            return;
         }
 
-        // 根据主题添加新的资源字典
-        var themeUri = new Uri(
-            actualTheme == AppTheme.Dark 
-                ? "Resources/Themes/Dark.xaml" 
-                : "Resources/Themes/Light.xaml", 
-            UriKind.Relative);
-        
-        System.Windows.Application.Current.Resources.MergedDictionaries.Insert(0, 
-            new ResourceDictionary { Source = themeUri });
-
         // 更新滑块样式
-        if (BackgroundOpacitySlider != null)
+        try
         {
-            BackgroundOpacitySlider.Style = actualTheme == AppTheme.Dark 
-                ? (Style)FindResource("AppleSliderStyleDark") 
-                : (Style)FindResource("AppleSliderStyle");
+            if (BackgroundOpacitySlider != null)
+            {
+                BackgroundOpacitySlider.Style = actualTheme == AppTheme.Dark
+                    ? (Style)FindResource("AppleSliderStyleDark")
+                    : (Style)FindResource("AppleSliderStyle");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Theme", "更新滑块样式失败", ex);
         }
     }
 
@@ -296,14 +397,41 @@ public partial class MainWindow : Window
     {
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.ThemeChanged -= OnThemeChanged;
+        _viewModel.OpenSettingsWindowRequested -= OnOpenSettingsWindowRequested;
         _viewModel.TodoListViewModel.InputVisibilityChanged -= OnTodoInputVisibilityChanged;
         PreviewMouseDown -= OnWindowPreviewMouseDown;
+        SizeChanged -= OnSizeChanged;
+
+        _viewModel.UpdateMainWindowSize(Width, Height, immediateSave: true);
     }
 
     private void OnLocationChanged(object? sender, EventArgs e)
     {
         // 实时更新位置显示
         _viewModel.UpdateCurrentPosition();
+    }
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        _viewModel.UpdateMainWindowSize(Width, Height);
+    }
+
+    private void ApplyWindowSize(WindowSettings settings)
+    {
+        if (!double.IsNaN(settings.Width) && settings.Width > 0)
+        {
+            Width = settings.Width;
+        }
+
+        if (!double.IsNaN(settings.Height) && settings.Height > 0)
+        {
+            Height = settings.Height;
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -314,18 +442,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SettingsPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void QuickSettingsPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.Source == sender)
         {
             if (_viewModel.IsSettingsPanelVisible)
             {
                 _viewModel.IsSettingsPanelVisible = false;
-                e.Handled = true;
-            }
-            else if (_viewModel.IsLogPanelVisible)
-            {
-                _viewModel.IsLogPanelVisible = false;
                 e.Handled = true;
             }
         }
@@ -336,11 +459,6 @@ public partial class MainWindow : Window
         if (_viewModel.IsSettingsPanelVisible)
         {
             _viewModel.IsSettingsPanelVisible = false;
-            e.Handled = true;
-        }
-        else if (_viewModel.IsLogPanelVisible)
-        {
-            _viewModel.IsLogPanelVisible = false;
             e.Handled = true;
         }
     }
@@ -768,18 +886,7 @@ public partial class MainWindow : Window
     {
         if (sender is Slider slider && _viewModel != null)
         {
-            // 使用统一的透明度转换逻辑
-            var actualOpacity = TransparencyHelper.FromPercent(slider.Value);
-
-            // 更新背景透明度（影响主容器背景）
-            UpdateBackgroundOpacity(actualOpacity);
-
-            // 更新ViewModel中的值
-            _viewModel.BackgroundOpacity = actualOpacity;
-            _viewModel.BackgroundOpacityPercent = slider.Value;
-
-            // 状态提示
-            _viewModel.SetStatus($"透明度已调整为 {(int)slider.Value}%");
+            _viewModel.UpdateBackgroundOpacityFromPercent(slider.Value);
         }
     }
 

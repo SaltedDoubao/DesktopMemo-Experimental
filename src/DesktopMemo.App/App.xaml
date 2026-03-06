@@ -10,8 +10,15 @@
                 <ResourceDictionary Source="Resources/Themes/Light.xaml" />
                 <ResourceDictionary Source="Resources/Styles.xaml" />
                 <ResourceDictionary Source="Resources/GlassResources.xaml" />
+                <ResourceDictionary Source="Resources/SettingsStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <conv:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+            <conv:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+            <conv:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter" />
+            <conv:InverseEqualityToVisibilityConverter x:Key="InverseEqualityToVisibilityConverter" />
+            <conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
 
             <!-- 对话框按钮样式 -->
             <Style x:Key="AccentButton" TargetType="Button">

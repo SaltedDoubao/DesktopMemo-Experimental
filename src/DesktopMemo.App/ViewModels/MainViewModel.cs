@@ -48,6 +48,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private WindowSettings _windowSettings = WindowSettings.Default;
 
     [ObservableProperty]
+    private bool _showExitConfirmation;
+
+    [ObservableProperty]
+    private bool _showDeleteConfirmation;
+
+    [ObservableProperty]
+    private bool _defaultExitToTray;
+
+    [ObservableProperty]
     private bool _isSettingsPanelVisible;
 
     [ObservableProperty]
@@ -252,6 +261,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ApplyWindowSettings(WindowSettings settings)
     {
         WindowSettings = settings;
+        ShowExitConfirmation = settings.ShowExitConfirmation;
+        ShowDeleteConfirmation = settings.ShowDeleteConfirmation;
+        DefaultExitToTray = settings.DefaultExitToTray;
+        IsTrayEnabled = settings.IsTrayEnabled;
 
         if (!double.IsNaN(settings.Left) && !double.IsNaN(settings.Top))
         {
@@ -297,6 +310,79 @@ public partial class MainViewModel : ObservableObject, IDisposable
         CurrentTop = top;
         CustomPositionX = left.ToString("F0");
         CustomPositionY = top.ToString("F0");
+    }
+
+    public void UpdateBackgroundOpacityFromPercent(double percent)
+    {
+        var actualOpacity = TransparencyHelper.FromPercent(percent);
+        BackgroundOpacity = actualOpacity;
+        BackgroundOpacityPercent = percent;
+        SetStatus($"透明度已调整为 {(int)percent}%");
+    }
+
+    public void UpdateMainWindowSize(double width, double height, bool immediateSave = false)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        if (double.IsNaN(width) || double.IsInfinity(width) || double.IsNaN(height) || double.IsInfinity(height))
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings.WithSize(width, height);
+
+        if (immediateSave)
+        {
+            _ = Task.Run(async () => await _settingsService.SaveAsync(WindowSettings));
+            return;
+        }
+
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"主窗口大小已保存: {width}x{height}");
+        });
+    }
+
+    public void UpdateSettingsWindowBounds(double width, double height, double left, double top, bool immediateSave = false)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        if (double.IsNaN(width) || double.IsInfinity(width) || double.IsNaN(height) || double.IsInfinity(height))
+        {
+            return;
+        }
+
+        if (double.IsNaN(left) || double.IsInfinity(left) || double.IsNaN(top) || double.IsInfinity(top))
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings with
+        {
+            SettingsWindowWidth = width,
+            SettingsWindowHeight = height,
+            SettingsWindowLeft = left,
+            SettingsWindowTop = top
+        };
+
+        if (immediateSave)
+        {
+            _ = Task.Run(async () => await _settingsService.SaveAsync(WindowSettings));
+            return;
+        }
+
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"设置窗口尺寸已保存: {width}x{height}");
+        });
     }
 
     [RelayCommand]
@@ -477,20 +563,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void OpenSettingsWindow()
+    {
+        OpenSettingsWindowRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
     private void ToggleLog()
     {
         if (IsLogPanelVisible)
         {
             // 从日志页面返回设置页面
             IsLogPanelVisible = false;
-            IsSettingsPanelVisible = true;
             SetStatus("返回设置");
         }
         else
         {
             // 从设置页面打开日志页面
             IsLogPanelVisible = true;
-            IsSettingsPanelVisible = false;
             _logViewModel.RefreshLogsCommand.Execute(null); // 刷新日志
             SetStatus("打开日志");
         }
@@ -768,10 +858,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _windowService.SetClickThrough(value);
         _trayService.UpdateClickThroughState(value);
 
+        if (_isInitializing)
+        {
+            return;
+        }
+
         if (value && IsSettingsPanelVisible)
         {
             IsSettingsPanelVisible = false;
         }
+
+        bool isTopMost = SelectedTopmostMode == TopmostMode.Always;
+        bool isDesktopMode = SelectedTopmostMode == TopmostMode.Desktop;
+
+        WindowSettings = WindowSettings.WithAppearance(BackgroundOpacity, isTopMost, isDesktopMode, value);
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine("穿透模式设置已保存");
+        });
     }
 
     partial void OnIsAutoStartEnabledChanged(bool value)
@@ -928,6 +1033,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             _trayService.Hide();
         }
+
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings with { IsTrayEnabled = value };
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"托盘启用状态已保存: {value}");
+        });
     }
 
     partial void OnSelectedMemoChanged(Memo? oldValue, Memo? newValue)
@@ -1113,6 +1230,60 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public event EventHandler<AppTheme>? ThemeChanged;
+    public event EventHandler? OpenSettingsWindowRequested;
+
+    partial void OnWindowSettingsChanged(WindowSettings value)
+    {
+        ShowExitConfirmation = value.ShowExitConfirmation;
+        ShowDeleteConfirmation = value.ShowDeleteConfirmation;
+        DefaultExitToTray = value.DefaultExitToTray;
+        IsTrayEnabled = value.IsTrayEnabled;
+    }
+
+    partial void OnShowExitConfirmationChanged(bool value)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings with { ShowExitConfirmation = value };
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"退出确认设置已保存: {value}");
+        });
+    }
+
+    partial void OnShowDeleteConfirmationChanged(bool value)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings with { ShowDeleteConfirmation = value };
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"删除确认设置已保存: {value}");
+        });
+    }
+
+    partial void OnDefaultExitToTrayChanged(bool value)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        WindowSettings = WindowSettings with { DefaultExitToTray = value };
+        _settingsSaveDebouncer.Debounce(async () =>
+        {
+            await _settingsService.SaveAsync(WindowSettings);
+            System.Diagnostics.Debug.WriteLine($"默认退出到托盘设置已保存: {value}");
+        });
+    }
 
     partial void OnIsInTodoListModeChanged(bool value)
     {
@@ -1124,6 +1295,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         
         // 保存当前页面状态
         var currentPage = value ? "todo" : "memo";
+        if (WindowSettings.CurrentPage == currentPage)
+        {
+            return;
+        }
+
         WindowSettings = WindowSettings with { CurrentPage = currentPage };
         
         // 异步保存到设置
