@@ -103,14 +103,14 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
                     m.id,
                     m.title,
                     m.preview,
-                    m.is_pinned,
-                    m.created_at,
-                    m.updated_at,
-                    m.file_path,
+                    m.is_pinned AS IsPinned,
+                    m.created_at AS CreatedAt,
+                    m.updated_at AS UpdatedAt,
+                    m.file_path AS FilePath,
                     m.version,
-                    m.sync_status,
-                    m.deleted_at,
-                    GROUP_CONCAT(t.tag) AS tags
+                    m.sync_status AS SyncStatus,
+                    m.deleted_at AS DeletedAt,
+                    GROUP_CONCAT(t.tag) AS Tags
                 FROM memos m
                 LEFT JOIN memo_tags t ON m.id = t.memo_id
                 WHERE m.deleted_at IS NULL
@@ -171,14 +171,14 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
                     m.id,
                     m.title,
                     m.preview,
-                    m.is_pinned,
-                    m.created_at,
-                    m.updated_at,
-                    m.file_path,
+                    m.is_pinned AS IsPinned,
+                    m.created_at AS CreatedAt,
+                    m.updated_at AS UpdatedAt,
+                    m.file_path AS FilePath,
                     m.version,
-                    m.sync_status,
-                    m.deleted_at,
-                    GROUP_CONCAT(t.tag) AS tags
+                    m.sync_status AS SyncStatus,
+                    m.deleted_at AS DeletedAt,
+                    GROUP_CONCAT(t.tag) AS Tags
                 FROM memos m
                 LEFT JOIN memo_tags t ON m.id = t.memo_id
                 WHERE m.id = @Id AND m.deleted_at IS NULL

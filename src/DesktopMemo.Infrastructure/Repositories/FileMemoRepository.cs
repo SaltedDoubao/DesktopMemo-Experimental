@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DesktopMemo.Core.Contracts;
 using DesktopMemo.Core.Models;
+using DesktopMemo.Infrastructure.Memos;
 
 namespace DesktopMemo.Infrastructure.Repositories;
 
@@ -125,41 +126,20 @@ public sealed class FileMemoRepository : IMemoRepository
 
     private async Task<Memo> LoadMemoAsync(string path, CancellationToken cancellationToken)
     {
-        await using var stream = File.OpenRead(path);
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-
-        string? line;
-        var firstLine = await reader.ReadLineAsync().ConfigureAwait(false);
-        if (firstLine is null || !firstLine.Equals("---", StringComparison.Ordinal))
-        {
-            throw new InvalidDataException($"备忘录文件 {path} 缺少 front matter。");
-        }
-
-        var metadataBuilder = new StringBuilder();
-        while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null && !line.Equals("---", StringComparison.Ordinal))
-        {
-            metadataBuilder.AppendLine(line);
-        }
-
-        if (line is null)
-        {
-            throw new InvalidDataException($"备忘录文件 {path} front matter 未正确结束。");
-        }
-
-        var content = await reader.ReadToEndAsync().ConfigureAwait(false);
+        var document = await MemoMarkdownDocumentReader.ReadDocumentAsync(path, cancellationToken).ConfigureAwait(false);
         
         // 获取文件系统时间戳作为后备方案
         var fileInfo = new FileInfo(path);
         var fileCreatedAt = new DateTimeOffset(fileInfo.CreationTimeUtc);
         var fileUpdatedAt = new DateTimeOffset(fileInfo.LastWriteTimeUtc);
         
-        var metadata = ParseMetadata(metadataBuilder.ToString(), fileCreatedAt, fileUpdatedAt);
+        var metadata = ParseMetadata(document.FrontMatter, fileCreatedAt, fileUpdatedAt);
 
         return new Memo(
             metadata.Id,
             metadata.Title,
-            content,
-            BuildPreview(content),
+            document.Content,
+            BuildPreview(document.Content),
             metadata.CreatedAt,
             metadata.UpdatedAt,
             metadata.Tags,
@@ -247,82 +227,14 @@ public sealed class FileMemoRepository : IMemoRepository
 
     private static MemoMetadata ParseMetadata(string yaml, DateTimeOffset fileCreatedAt, DateTimeOffset fileUpdatedAt)
     {
-        var id = Guid.Empty;
-        var title = string.Empty;
-        DateTimeOffset? createdAt = null;
-        DateTimeOffset? updatedAt = null;
-        var isPinned = false;
-        var tags = new List<string>();
-
-        using var reader = new StringReader(yaml);
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
-        {
-            try
-            {
-                if (line.StartsWith("id:", StringComparison.Ordinal))
-                {
-                    if (Guid.TryParse(line[3..].Trim(), out var parsedId))
-                    {
-                        id = parsedId;
-                    }
-                }
-                else if (line.StartsWith("title:", StringComparison.Ordinal))
-                {
-                    title = line[6..].Trim().Trim('"');
-                }
-                else if (line.StartsWith("createdAt:", StringComparison.Ordinal))
-                {
-                    if (DateTimeOffset.TryParse(line[10..].Trim(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedCreatedAt))
-                    {
-                        createdAt = parsedCreatedAt;
-                    }
-                }
-                else if (line.StartsWith("updatedAt:", StringComparison.Ordinal))
-                {
-                    if (DateTimeOffset.TryParse(line[10..].Trim(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsedUpdatedAt))
-                    {
-                        updatedAt = parsedUpdatedAt;
-                    }
-                }
-                else if (line.StartsWith("isPinned:", StringComparison.Ordinal))
-                {
-                    if (bool.TryParse(line[9..].Trim(), out var parsedIsPinned))
-                    {
-                        isPinned = parsedIsPinned;
-                    }
-                }
-                else if (line.TrimStart().StartsWith("-", StringComparison.Ordinal))
-                {
-                    var dashIndex = line.IndexOf('-');
-                    if (dashIndex >= 0)
-                    {
-                        var tag = line.Substring(dashIndex + 1).Trim().Trim('"');
-                        if (!string.IsNullOrWhiteSpace(tag))
-                        {
-                            tags.Add(tag);
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // 跳过无法解析的行，继续处理其他行
-                continue;
-            }
-        }
-
-        // 如果id为空，生成一个新的id以避免问题
-        if (id == Guid.Empty)
-        {
-            id = Guid.NewGuid();
-        }
+        var frontMatter = MemoMarkdownFrontMatterParser.Parse(yaml);
+        var id = frontMatter.Id ?? Guid.NewGuid();
 
         // 如果 YAML front matter 中没有时间戳，使用文件系统时间作为后备方案
-        var finalCreatedAt = createdAt ?? fileCreatedAt;
-        var finalUpdatedAt = updatedAt ?? fileUpdatedAt;
+        var finalCreatedAt = frontMatter.CreatedAt ?? fileCreatedAt;
+        var finalUpdatedAt = frontMatter.UpdatedAt ?? fileUpdatedAt;
 
-        return new MemoMetadata(id, title, finalCreatedAt, finalUpdatedAt, tags, isPinned);
+        return new MemoMetadata(id, frontMatter.Title, finalCreatedAt, finalUpdatedAt, frontMatter.Tags, frontMatter.IsPinned);
     }
 
     private sealed class MemoIndex

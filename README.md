@@ -153,7 +153,14 @@ DesktopMemo_rebuild/
 
 ## 📝 更新日志
 
-### v2.4.0 (Latest)
+### v2.4.1 (Latest)
+- Bug 修复
+  - 启动时新增 Markdown front matter 时间同步，修复 `.md` 中 `createdAt` / `updatedAt` 无法反映到应用的问题
+  - 修复 SQLite 备忘录时间字段映射，确保列表显示和排序使用正确时间值
+- 测试改进
+  - 新增 Infrastructure 测试项目，覆盖 front matter 解析、时间回写、跳过无效文件等场景
+
+### v2.4.0
 - 功能增强
   - 实现编辑未保存提示功能，移除自动保存机制
   - 添加 Todo 项内联编辑功能

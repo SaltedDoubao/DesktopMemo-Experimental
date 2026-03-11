@@ -153,7 +153,14 @@ For other development considerations, see [CONTRIBUTING.md](docs/CONTRIBUTING.md
 
 ## 📝 Changelog
 
-### v2.4.0 (Latest)
+### v2.4.1 (Latest)
+- Bug Fixes
+  - Added startup synchronization from Markdown front matter timestamps to SQLite so `createdAt` / `updatedAt` in `.md` files are reflected in the app
+  - Fixed SQLite memo timestamp field mapping so list display and ordering use the correct values
+- Test Improvements
+  - Added an Infrastructure test project covering front matter parsing, timestamp sync, and invalid file skip scenarios
+
+### v2.4.0
 - Feature Enhancements
   - Implemented unsaved edit prompt and removed auto-save mechanism
   - Added inline editing for Todo items
