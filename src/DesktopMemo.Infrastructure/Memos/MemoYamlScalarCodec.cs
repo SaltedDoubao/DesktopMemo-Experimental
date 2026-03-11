@@ -57,15 +57,29 @@ internal static class MemoYamlScalarCodec
             }
 
             i++;
-            builder.Append(trimmed[i] switch
+            var esc = trimmed[i];
+            switch (esc)
             {
-                '\\' => '\\',
-                '"' => '"',
-                'r' => '\r',
-                'n' => '\n',
-                't' => '\t',
-                _ => trimmed[i]
-            });
+                case '\\':
+                    builder.Append('\\');
+                    break;
+                case '"':
+                    builder.Append('"');
+                    break;
+                case 'r':
+                    builder.Append('\r');
+                    break;
+                case 'n':
+                    builder.Append('\n');
+                    break;
+                case 't':
+                    builder.Append('\t');
+                    break;
+                default:
+                    builder.Append('\\');
+                    builder.Append(esc);
+                    break;
+            }
         }
 
         return builder.ToString();

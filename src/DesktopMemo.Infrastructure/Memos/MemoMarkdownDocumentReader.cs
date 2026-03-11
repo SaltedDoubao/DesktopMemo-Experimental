@@ -51,7 +51,7 @@ internal static class MemoMarkdownDocumentReader
                 return (metadataBuilder.ToString(), content);
             }
 
-            if (metadataBuilder.Length + line.Length + 1 > MaxFrontMatterLength)
+            if (metadataBuilder.Length + line.Length + Environment.NewLine.Length > MaxFrontMatterLength)
             {
                 throw new InvalidDataException($"备忘录文件 {path} front matter 超出允许大小。");
             }
