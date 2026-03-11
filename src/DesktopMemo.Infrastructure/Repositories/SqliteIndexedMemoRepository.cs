@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Dapper;
 using DesktopMemo.Core.Contracts;
 using DesktopMemo.Core.Models;
+using DesktopMemo.Infrastructure.Memos;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -468,26 +469,19 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
         var builder = new StringBuilder();
         builder.AppendLine("---");
         builder.AppendLine($"id: {memo.Id}");
-        builder.AppendLine($"title: {EscapeYamlString(memo.Title)}");
+        builder.AppendLine($"title: {MemoYamlScalarCodec.Encode(memo.Title)}");
         builder.AppendLine($"createdAt: {memo.CreatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"updatedAt: {memo.UpdatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"isPinned: {memo.IsPinned.ToString(CultureInfo.InvariantCulture)}");
         builder.AppendLine("tags:");
         foreach (var tag in memo.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            builder.AppendLine($"  - {EscapeYamlString(tag)}");
+            builder.AppendLine($"  - {MemoYamlScalarCodec.Encode(tag)}");
         }
         builder.AppendLine("---");
         builder.Append(memo.Content);
 
         await File.WriteAllTextAsync(filePath, builder.ToString(), Encoding.UTF8, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static string EscapeYamlString(string value)
-    {
-        return value.Contains(':', StringComparison.Ordinal) || value.Contains('"')
-            ? $"\"{value.Replace("\"", "\\\"", StringComparison.Ordinal)}\""
-            : value;
     }
 
     public void Dispose()

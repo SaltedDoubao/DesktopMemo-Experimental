@@ -89,7 +89,7 @@ public sealed class MemoFrontMatterTimestampSyncServiceTests
             """);
 
         var result = await service.SyncAsync();
-        var dbRow = await ReadDatabaseRowAsync(tempDirectory.Path, id);
+        var dbRow = await ReadDatabaseRecordAsync(tempDirectory.Path, id);
 
         Assert.Equal(1, result.ScannedCount);
         Assert.Equal(0, result.UpdatedCount);
@@ -122,6 +122,119 @@ public sealed class MemoFrontMatterTimestampSyncServiceTests
         Assert.Equal(0, result.UpdatedCount);
         Assert.Equal(1, result.SkippedCount);
         Assert.Equal(0, result.ParseFailureCount);
+    }
+
+    [Fact]
+    public async Task SyncAsync_UsesFallbackPath_AndSelfHealsFilePath()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        using var repository = new SqliteIndexedMemoRepository(tempDirectory.Path);
+        var logger = new TestLogService();
+        var service = new MemoFrontMatterTimestampSyncService(tempDirectory.Path, logger);
+
+        var id = Guid.NewGuid();
+        var createdAt = DateTimeOffset.Parse("2026-03-10T10:00:00+08:00");
+        var updatedAt = DateTimeOffset.Parse("2026-03-10T10:05:00+08:00");
+        var syncedUpdatedAt = DateTimeOffset.Parse("2026-03-12T11:15:00+08:00");
+
+        await repository.AddAsync(CreateMemo(id, createdAt, updatedAt));
+        await File.WriteAllTextAsync(GetMemoPath(tempDirectory.Path, id), BuildMarkdown(id, createdAt, syncedUpdatedAt));
+        await SetFilePathAsync(tempDirectory.Path, id, Path.Combine(tempDirectory.Path, "content", "stale.md"));
+
+        var result = await service.SyncAsync();
+        var dbRow = await ReadDatabaseRecordAsync(tempDirectory.Path, id);
+
+        Assert.Equal(1, result.ScannedCount);
+        Assert.Equal(1, result.UpdatedCount);
+        Assert.NotNull(dbRow);
+        Assert.Equal(GetMemoPath(tempDirectory.Path, id), dbRow!.Value.FilePath);
+        Assert.Equal(syncedUpdatedAt.ToString("o"), dbRow.Value.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task SyncAsync_SkipsFile_WhenFrontMatterIdDoesNotMatchDatabaseRow()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        using var repository = new SqliteIndexedMemoRepository(tempDirectory.Path);
+        var logger = new TestLogService();
+        var service = new MemoFrontMatterTimestampSyncService(tempDirectory.Path, logger);
+
+        var id = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.Parse("2026-03-10T10:00:00+08:00");
+        var updatedAt = DateTimeOffset.Parse("2026-03-10T10:05:00+08:00");
+
+        await repository.AddAsync(CreateMemo(id, createdAt, updatedAt));
+        await File.WriteAllTextAsync(GetMemoPath(tempDirectory.Path, id), BuildMarkdown(otherId, createdAt.AddDays(-1), updatedAt.AddDays(1)));
+
+        var result = await service.SyncAsync();
+        var dbRow = await ReadDatabaseRecordAsync(tempDirectory.Path, id);
+
+        Assert.Equal(1, result.ScannedCount);
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.NotNull(dbRow);
+        Assert.Equal(createdAt.ToString("o"), dbRow!.Value.CreatedAt);
+        Assert.Equal(updatedAt.ToString("o"), dbRow.Value.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task SyncAsync_SkipsFile_WhenFrontMatterExceedsLimit()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        using var repository = new SqliteIndexedMemoRepository(tempDirectory.Path);
+        var logger = new TestLogService();
+        var service = new MemoFrontMatterTimestampSyncService(tempDirectory.Path, logger);
+
+        var id = Guid.NewGuid();
+        await repository.AddAsync(CreateMemo(
+            id,
+            DateTimeOffset.Parse("2026-03-10T10:00:00+08:00"),
+            DateTimeOffset.Parse("2026-03-10T10:05:00+08:00")));
+
+        var oversizedLine = new string('b', DesktopMemo.Infrastructure.Memos.MemoMarkdownDocumentReader.MaxFrontMatterLength + 1);
+        await File.WriteAllTextAsync(GetMemoPath(tempDirectory.Path, id), $$"""
+            ---
+            title: "{{oversizedLine}}"
+            createdAt: 2026-03-10T10:00:00+08:00
+            updatedAt: 2026-03-10T10:05:00+08:00
+            ---
+            body
+            """);
+
+        var result = await service.SyncAsync();
+
+        Assert.Equal(1, result.ScannedCount);
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal(1, result.ParseFailureCount);
+    }
+
+    [Fact]
+    public async Task SyncAsync_CountsSkipped_WhenUpdateAffectsZeroRows()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        using var repository = new SqliteIndexedMemoRepository(tempDirectory.Path);
+        var logger = new TestLogService();
+        var service = new MemoFrontMatterTimestampSyncService(tempDirectory.Path, logger);
+
+        var id = Guid.NewGuid();
+        var createdAt = DateTimeOffset.Parse("2026-03-10T10:00:00+08:00");
+        var updatedAt = DateTimeOffset.Parse("2026-03-10T10:05:00+08:00");
+
+        await repository.AddAsync(CreateMemo(id, createdAt, updatedAt));
+        await File.WriteAllTextAsync(GetMemoPath(tempDirectory.Path, id), BuildMarkdown(id, createdAt.AddDays(-2), updatedAt.AddDays(2)));
+        await CreateIgnoreUpdateTriggerAsync(tempDirectory.Path, id);
+
+        var result = await service.SyncAsync();
+        var dbRow = await ReadDatabaseRecordAsync(tempDirectory.Path, id);
+
+        Assert.Equal(1, result.ScannedCount);
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.NotNull(dbRow);
+        Assert.Equal(createdAt.ToString("o"), dbRow!.Value.CreatedAt);
+        Assert.Equal(updatedAt.ToString("o"), dbRow.Value.UpdatedAt);
     }
 
     [Fact]
@@ -162,7 +275,7 @@ public sealed class MemoFrontMatterTimestampSyncServiceTests
         return $$"""
             ---
             id: {{id}}
-            title: 标题
+            title: "标题"
             createdAt: {{createdAt:o}}
             updatedAt: {{updatedAt:o}}
             isPinned: False
@@ -172,14 +285,45 @@ public sealed class MemoFrontMatterTimestampSyncServiceTests
             """;
     }
 
-    private static async Task<(string CreatedAt, string UpdatedAt)?> ReadDatabaseRowAsync(string dataDirectory, Guid id)
+    private static async Task SetFilePathAsync(string dataDirectory, Guid id, string filePath)
     {
         var dbPath = Path.Combine(dataDirectory, "memos.db");
         await using var connection = new SqliteConnection($"Data Source={dbPath}");
         await connection.OpenAsync();
 
         var command = connection.CreateCommand();
-        command.CommandText = "SELECT created_at, updated_at FROM memos WHERE id = $id";
+        command.CommandText = "UPDATE memos SET file_path = $filePath WHERE id = $id";
+        command.Parameters.AddWithValue("$filePath", filePath);
+        command.Parameters.AddWithValue("$id", id.ToString());
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task CreateIgnoreUpdateTriggerAsync(string dataDirectory, Guid id)
+    {
+        var dbPath = Path.Combine(dataDirectory, "memos.db");
+        await using var connection = new SqliteConnection($"Data Source={dbPath}");
+        await connection.OpenAsync();
+
+        var command = connection.CreateCommand();
+        command.CommandText = $$"""
+            CREATE TRIGGER ignore_memo_update
+            BEFORE UPDATE OF created_at, updated_at ON memos
+            WHEN OLD.id = '{{id}}'
+            BEGIN
+                SELECT RAISE(IGNORE);
+            END;
+            """;
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<(string CreatedAt, string UpdatedAt, string FilePath)?> ReadDatabaseRecordAsync(string dataDirectory, Guid id)
+    {
+        var dbPath = Path.Combine(dataDirectory, "memos.db");
+        await using var connection = new SqliteConnection($"Data Source={dbPath}");
+        await connection.OpenAsync();
+
+        var command = connection.CreateCommand();
+        command.CommandText = "SELECT created_at, updated_at, file_path FROM memos WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.ToString());
 
         await using var reader = await command.ExecuteReaderAsync();
@@ -188,7 +332,7 @@ public sealed class MemoFrontMatterTimestampSyncServiceTests
             return null;
         }
 
-        return (reader.GetString(0), reader.GetString(1));
+        return (reader.GetString(0), reader.GetString(1), reader.GetString(2));
     }
 }
 

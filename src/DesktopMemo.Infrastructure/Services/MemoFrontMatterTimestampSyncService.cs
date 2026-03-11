@@ -12,18 +12,22 @@ namespace DesktopMemo.Infrastructure.Services;
 
 public sealed class MemoFrontMatterTimestampSyncService
 {
+    private readonly string _dbPath;
+    private readonly string _contentDirectory;
     private readonly string _connectionString;
     private readonly ILogService _logService;
 
     public MemoFrontMatterTimestampSyncService(string dataDirectory, ILogService logService)
     {
-        _connectionString = $"Data Source={Path.Combine(dataDirectory, "memos.db")}";
+        _dbPath = Path.Combine(dataDirectory, "memos.db");
+        _contentDirectory = Path.Combine(dataDirectory, "content");
+        _connectionString = $"Data Source={_dbPath}";
         _logService = logService;
     }
 
     public async Task<MemoFrontMatterTimestampSyncResult> SyncAsync(CancellationToken cancellationToken = default)
     {
-        if (!TryGetDatabasePath(out var dbPath) || !File.Exists(dbPath))
+        if (!File.Exists(_dbPath))
         {
             _logService.Debug("MemoTimestampSync", "未检测到 memos.db，跳过 Markdown 时间同步");
             return new MemoFrontMatterTimestampSyncResult(0, 0, 0, 0);
@@ -49,17 +53,33 @@ public sealed class MemoFrontMatterTimestampSyncService
             cancellationToken.ThrowIfCancellationRequested();
             scannedCount++;
 
-            if (!File.Exists(row.FilePath))
+            if (!Guid.TryParse(row.Id, out var memoId))
             {
                 skippedCount++;
-                _logService.Warning("MemoTimestampSync", $"备忘录文件不存在，跳过时间同步: {row.Id}");
+                parseFailureCount++;
+                _logService.Warning("MemoTimestampSync", $"备忘录 ID 无效，跳过时间同步: {row.Id}");
                 continue;
             }
 
             try
             {
-                var yaml = await MemoMarkdownDocumentReader.ReadFrontMatterAsync(row.FilePath, cancellationToken).ConfigureAwait(false);
+                var filePath = await ResolveFilePathAsync(connection, row, memoId).ConfigureAwait(false);
+                if (filePath is null)
+                {
+                    skippedCount++;
+                    _logService.Warning("MemoTimestampSync", $"备忘录文件不存在，跳过时间同步: {row.Id}");
+                    continue;
+                }
+
+                var yaml = await MemoMarkdownDocumentReader.ReadFrontMatterAsync(filePath, cancellationToken).ConfigureAwait(false);
                 var frontMatter = MemoMarkdownFrontMatterParser.Parse(yaml);
+
+                if (frontMatter.Id is Guid frontMatterId && frontMatterId != memoId)
+                {
+                    skippedCount++;
+                    _logService.Warning("MemoTimestampSync", $"备忘录 front matter ID 与数据库记录不一致，跳过时间同步: {row.Id}");
+                    continue;
+                }
 
                 if (frontMatter.CreatedAt is null || frontMatter.UpdatedAt is null)
                 {
@@ -85,14 +105,22 @@ public sealed class MemoFrontMatterTimestampSyncService
                         updated_at = @UpdatedAt
                     WHERE id = @Id AND deleted_at IS NULL";
 
-                await connection.ExecuteAsync(updateSql, new
+                var rowsAffected = await connection.ExecuteAsync(updateSql, new
                 {
                     row.Id,
                     CreatedAt = markdownCreatedAt.ToString("o", CultureInfo.InvariantCulture),
                     UpdatedAt = markdownUpdatedAt.ToString("o", CultureInfo.InvariantCulture)
                 }).ConfigureAwait(false);
 
-                updatedCount++;
+                if (rowsAffected > 0)
+                {
+                    updatedCount++;
+                }
+                else
+                {
+                    skippedCount++;
+                    _logService.Debug("MemoTimestampSync", $"备忘录记录未更新，可能已被删除: {row.Id}");
+                }
             }
             catch (InvalidDataException ex)
             {
@@ -114,17 +142,34 @@ public sealed class MemoFrontMatterTimestampSyncService
         return new MemoFrontMatterTimestampSyncResult(scannedCount, updatedCount, skippedCount, parseFailureCount);
     }
 
-    private bool TryGetDatabasePath(out string? dbPath)
+    private async Task<string?> ResolveFilePathAsync(SqliteConnection connection, MemoTimestampRow row, Guid memoId)
     {
-        const string prefix = "Data Source=";
-        if (_connectionString.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(row.FilePath) && File.Exists(row.FilePath))
         {
-            dbPath = _connectionString[prefix.Length..];
-            return true;
+            return row.FilePath;
         }
 
-        dbPath = null;
-        return false;
+        var fallbackPath = Path.Combine(_contentDirectory, $"{memoId:N}.md");
+        if (!File.Exists(fallbackPath))
+        {
+            return null;
+        }
+
+        if (!string.Equals(row.FilePath, fallbackPath, StringComparison.OrdinalIgnoreCase))
+        {
+            const string updatePathSql = @"
+                UPDATE memos
+                SET file_path = @FilePath
+                WHERE id = @Id AND deleted_at IS NULL";
+
+            await connection.ExecuteAsync(updatePathSql, new
+            {
+                FilePath = fallbackPath,
+                row.Id
+            }).ConfigureAwait(false);
+        }
+
+        return fallbackPath;
     }
 
     private static DateTimeOffset? ParseTimestamp(string value)

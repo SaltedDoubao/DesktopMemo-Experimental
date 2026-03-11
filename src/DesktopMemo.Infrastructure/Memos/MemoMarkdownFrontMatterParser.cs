@@ -28,64 +28,57 @@ internal static class MemoMarkdownFrontMatterParser
         string? line;
         while ((line = reader.ReadLine()) is not null)
         {
-            try
+            if (line.StartsWith("id:", StringComparison.Ordinal))
             {
-                if (line.StartsWith("id:", StringComparison.Ordinal))
+                if (Guid.TryParse(line[3..].Trim(), out var parsedId))
                 {
-                    if (Guid.TryParse(line[3..].Trim(), out var parsedId))
-                    {
-                        id = parsedId;
-                    }
-                }
-                else if (line.StartsWith("title:", StringComparison.Ordinal))
-                {
-                    title = line[6..].Trim().Trim('"');
-                }
-                else if (line.StartsWith("createdAt:", StringComparison.Ordinal))
-                {
-                    if (DateTimeOffset.TryParse(
-                        line[10..].Trim(),
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind,
-                        out var parsedCreatedAt))
-                    {
-                        createdAt = parsedCreatedAt;
-                    }
-                }
-                else if (line.StartsWith("updatedAt:", StringComparison.Ordinal))
-                {
-                    if (DateTimeOffset.TryParse(
-                        line[10..].Trim(),
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind,
-                        out var parsedUpdatedAt))
-                    {
-                        updatedAt = parsedUpdatedAt;
-                    }
-                }
-                else if (line.StartsWith("isPinned:", StringComparison.Ordinal))
-                {
-                    if (bool.TryParse(line[9..].Trim(), out var parsedIsPinned))
-                    {
-                        isPinned = parsedIsPinned;
-                    }
-                }
-                else if (line.TrimStart().StartsWith("-", StringComparison.Ordinal))
-                {
-                    var dashIndex = line.IndexOf('-');
-                    if (dashIndex >= 0)
-                    {
-                        var tag = line[(dashIndex + 1)..].Trim().Trim('"');
-                        if (!string.IsNullOrWhiteSpace(tag))
-                        {
-                            tags.Add(tag);
-                        }
-                    }
+                    id = parsedId;
                 }
             }
-            catch
+            else if (line.StartsWith("title:", StringComparison.Ordinal))
             {
-                continue;
+                title = MemoYamlScalarCodec.Decode(line[6..]);
+            }
+            else if (line.StartsWith("createdAt:", StringComparison.Ordinal))
+            {
+                if (DateTimeOffset.TryParse(
+                    line[10..].Trim(),
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
+                    out var parsedCreatedAt))
+                {
+                    createdAt = parsedCreatedAt;
+                }
+            }
+            else if (line.StartsWith("updatedAt:", StringComparison.Ordinal))
+            {
+                if (DateTimeOffset.TryParse(
+                    line[10..].Trim(),
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
+                    out var parsedUpdatedAt))
+                {
+                    updatedAt = parsedUpdatedAt;
+                }
+            }
+            else if (line.StartsWith("isPinned:", StringComparison.Ordinal))
+            {
+                if (bool.TryParse(line[9..].Trim(), out var parsedIsPinned))
+                {
+                    isPinned = parsedIsPinned;
+                }
+            }
+            else if (line.TrimStart().StartsWith("-", StringComparison.Ordinal))
+            {
+                var dashIndex = line.IndexOf('-');
+                if (dashIndex >= 0)
+                {
+                    var tag = MemoYamlScalarCodec.Decode(line[(dashIndex + 1)..]);
+                    if (!string.IsNullOrWhiteSpace(tag))
+                    {
+                        tags.Add(tag);
+                    }
+                }
             }
         }
 

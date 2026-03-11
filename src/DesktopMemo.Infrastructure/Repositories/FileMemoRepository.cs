@@ -151,14 +151,14 @@ public sealed class FileMemoRepository : IMemoRepository
         var builder = new StringBuilder();
         builder.AppendLine("---");
         builder.AppendLine($"id: {memo.Id}");
-        builder.AppendLine($"title: {EscapeYamlString(memo.Title)}");
+        builder.AppendLine($"title: {MemoYamlScalarCodec.Encode(memo.Title)}");
         builder.AppendLine($"createdAt: {memo.CreatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"updatedAt: {memo.UpdatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"isPinned: {memo.IsPinned.ToString(CultureInfo.InvariantCulture)}");
         builder.AppendLine("tags:");
         foreach (var tag in memo.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            builder.AppendLine($"  - {EscapeYamlString(tag)}");
+            builder.AppendLine($"  - {MemoYamlScalarCodec.Encode(tag)}");
         }
         builder.AppendLine("---");
         builder.Append(memo.Content);
@@ -186,13 +186,6 @@ public sealed class FileMemoRepository : IMemoRepository
         }
 
         return trimmed.Substring(0, 120) + "...";
-    }
-
-    private static string EscapeYamlString(string value)
-    {
-        return value.Contains(':', StringComparison.Ordinal) || value.Contains('"')
-            ? $"\"{value.Replace("\"", "\\\"", StringComparison.Ordinal)}\""
-            : value;
     }
 
     private async Task<MemoIndex> LoadIndexAsync(CancellationToken cancellationToken)
