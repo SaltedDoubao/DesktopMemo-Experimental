@@ -83,4 +83,44 @@ public sealed class MemoFrontMatterParsingTests
 
         await Assert.ThrowsAsync<InvalidDataException>(() => MemoMarkdownDocumentReader.ReadFrontMatterAsync(filePath));
     }
+
+    [Fact]
+    public async Task ReadFrontMatterAsync_AllowsFrontMatter_AtExactLimit()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var filePath = Path.Combine(tempDirectory.Path, "memo.md");
+        var exactLineLength = MemoMarkdownDocumentReader.MaxFrontMatterLength - Environment.NewLine.Length;
+        var exactLine = new string('a', exactLineLength);
+
+        await File.WriteAllTextAsync(
+            filePath,
+            $"---{Environment.NewLine}{exactLine}{Environment.NewLine}---{Environment.NewLine}body");
+
+        var frontMatter = await MemoMarkdownDocumentReader.ReadFrontMatterAsync(filePath);
+
+        Assert.Equal(exactLine + Environment.NewLine, frontMatter);
+    }
+
+    [Fact]
+    public async Task ReadFrontMatterAsync_Throws_WhenFrontMatterExceedsLimitByOneCharacter()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var filePath = Path.Combine(tempDirectory.Path, "memo.md");
+        var tooLongLineLength = MemoMarkdownDocumentReader.MaxFrontMatterLength - Environment.NewLine.Length + 1;
+        var tooLongLine = new string('a', tooLongLineLength);
+
+        await File.WriteAllTextAsync(
+            filePath,
+            $"---{Environment.NewLine}{tooLongLine}{Environment.NewLine}---{Environment.NewLine}body");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => MemoMarkdownDocumentReader.ReadFrontMatterAsync(filePath));
+    }
+
+    [Fact]
+    public void Decode_PreservesBackslash_ForUnknownEscapeSequences()
+    {
+        var decoded = MemoYamlScalarCodec.Decode("\"C:\\path\\p\"");
+
+        Assert.Equal(@"C:\path\p", decoded);
+    }
 }
