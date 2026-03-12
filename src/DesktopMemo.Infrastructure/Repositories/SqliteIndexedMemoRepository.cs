@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Dapper;
 using DesktopMemo.Core.Contracts;
 using DesktopMemo.Core.Models;
+using DesktopMemo.Infrastructure.Memos;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -103,14 +104,14 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
                     m.id,
                     m.title,
                     m.preview,
-                    m.is_pinned,
-                    m.created_at,
-                    m.updated_at,
-                    m.file_path,
+                    m.is_pinned AS IsPinned,
+                    m.created_at AS CreatedAt,
+                    m.updated_at AS UpdatedAt,
+                    m.file_path AS FilePath,
                     m.version,
-                    m.sync_status,
-                    m.deleted_at,
-                    GROUP_CONCAT(t.tag) AS tags
+                    m.sync_status AS SyncStatus,
+                    m.deleted_at AS DeletedAt,
+                    GROUP_CONCAT(t.tag) AS Tags
                 FROM memos m
                 LEFT JOIN memo_tags t ON m.id = t.memo_id
                 WHERE m.deleted_at IS NULL
@@ -171,14 +172,14 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
                     m.id,
                     m.title,
                     m.preview,
-                    m.is_pinned,
-                    m.created_at,
-                    m.updated_at,
-                    m.file_path,
+                    m.is_pinned AS IsPinned,
+                    m.created_at AS CreatedAt,
+                    m.updated_at AS UpdatedAt,
+                    m.file_path AS FilePath,
                     m.version,
-                    m.sync_status,
-                    m.deleted_at,
-                    GROUP_CONCAT(t.tag) AS tags
+                    m.sync_status AS SyncStatus,
+                    m.deleted_at AS DeletedAt,
+                    GROUP_CONCAT(t.tag) AS Tags
                 FROM memos m
                 LEFT JOIN memo_tags t ON m.id = t.memo_id
                 WHERE m.id = @Id AND m.deleted_at IS NULL
@@ -468,26 +469,19 @@ public sealed class SqliteIndexedMemoRepository : IMemoRepository, IDisposable
         var builder = new StringBuilder();
         builder.AppendLine("---");
         builder.AppendLine($"id: {memo.Id}");
-        builder.AppendLine($"title: {EscapeYamlString(memo.Title)}");
+        builder.AppendLine($"title: {MemoYamlScalarCodec.Encode(memo.Title)}");
         builder.AppendLine($"createdAt: {memo.CreatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"updatedAt: {memo.UpdatedAt.ToString("O", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"isPinned: {memo.IsPinned.ToString(CultureInfo.InvariantCulture)}");
         builder.AppendLine("tags:");
         foreach (var tag in memo.Tags.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            builder.AppendLine($"  - {EscapeYamlString(tag)}");
+            builder.AppendLine($"  - {MemoYamlScalarCodec.Encode(tag)}");
         }
         builder.AppendLine("---");
         builder.Append(memo.Content);
 
         await File.WriteAllTextAsync(filePath, builder.ToString(), Encoding.UTF8, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static string EscapeYamlString(string value)
-    {
-        return value.Contains(':', StringComparison.Ordinal) || value.Contains('"')
-            ? $"\"{value.Replace("\"", "\\\"", StringComparison.Ordinal)}\""
-            : value;
     }
 
     public void Dispose()

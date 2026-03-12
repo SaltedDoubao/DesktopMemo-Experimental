@@ -39,6 +39,9 @@ public partial class App : WpfApp
         // 数据迁移服务
         services.AddSingleton<TodoMigrationService>();
         services.AddSingleton<MemoMetadataMigrationService>();
+        services.AddSingleton(_ => new MemoFrontMatterTimestampSyncService(
+            dataDirectory,
+            _.GetRequiredService<ILogService>()));
 
         // 窗口和托盘服务
         services.AddSingleton<IWindowService, WindowService>();
@@ -101,6 +104,12 @@ public partial class App : WpfApp
                 System.Diagnostics.Debug.WriteLine($"[App启动] 备忘录索引迁移结果: {memoMigrationResult.Message}");
                 logService.Debug("Migration", $"备忘录索引迁移结果: {memoMigrationResult.Message}");
             }
+
+            // 3. 备忘录时间同步（Markdown front matter -> SQLite）
+            var memoTimestampSyncService = Services.GetRequiredService<MemoFrontMatterTimestampSyncService>();
+            var syncResult = await memoTimestampSyncService.SyncAsync();
+            System.Diagnostics.Debug.WriteLine(
+                $"[App启动] Markdown 时间同步完成: 扫描 {syncResult.ScannedCount}，更新 {syncResult.UpdatedCount}，跳过 {syncResult.SkippedCount}，解析失败 {syncResult.ParseFailureCount}");
             
             System.Diagnostics.Debug.WriteLine("========== 数据迁移检查完成 ==========");
             logService.Info("Migration", "数据迁移检查完成");
