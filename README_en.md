@@ -160,19 +160,6 @@ For other development considerations, see [CONTRIBUTING.md](docs/CONTRIBUTING.md
 - Test Improvements
   - Added an Infrastructure test project covering front matter parsing, timestamp sync, and invalid file skip scenarios
 
-### v2.4.0
-- Feature Enhancements
-  - Implemented unsaved edit prompt and removed auto-save mechanism
-  - Added inline editing for Todo items
-  - Integrated log viewer UI
-- Performance Optimizations
-  - Improved log display performance and error handling
-  - Enhanced database operation security and data integrity
-- Bug Fixes
-  - Fixed memo timestamp handling logic
-- Documentation Updates
-  - Improved project documentation system (Contributing guide, API docs, Architecture docs, etc.)
-
 For more history, see [Releases](../../releases)
 
 ## 🚧 Roadmap
