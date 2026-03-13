@@ -165,10 +165,9 @@ For more history, see [Releases](../../releases)
 ## 🚧 Roadmap
 
 ### Updates that may be implemented soon
+- [ ] Improve shortcut-related features
+- [ ] Optimize UI appearance across different background colors
 - [ ] Add preset window size schemes
-
-### Future update trends
-- To be added...
 
 ## 📄 License
 
